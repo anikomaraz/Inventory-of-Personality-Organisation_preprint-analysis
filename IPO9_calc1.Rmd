@@ -1,0 +1,78 @@
+---
+title: "[IPO9] Calc1 (descriptive statistics)"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment="")
+options(width = 100)
+```
+
+<br>
+<br>
+
+Data are the same: 
+
+```{r, cache=T, echo=F, message=F, warning=F, error=F}
+df <- read.csv(file="./data/df_final.csv")
+dim(df) # 181 rows and 585 (created an extra ID (=X) variable)
+
+library(plyr)
+df <- plyr::rename(df, c("X"="id"))
+
+df_names <- colnames(df)
+for(i in df_names) {
+  df[[i]] <- as.numeric(df[[i]])
+}
+
+df$gender <- as.factor(df$gender)
+df$education <- as.factor(df$education)
+df$lca_class <- as.factor(df$lca_class)
+
+df$gender <- factor(df$gender, levels = c(1, 2), labels=c("male", "female"))
+df$education <- factor(df$education, levels=c(1, 2, 3, 4, 5, 8), 
+                       labels=c("primary school", "few secondary sch classes", "secondary school completed", 
+                                "vocational training", "university degree", "other"))
+df$lca_class <- factor(df$lca_class, levels=c("2", "3", "1"), 
+                              labels=c("Disintegrated", "Moderately integrated", "Well-integrated"))
+
+
+```
+
+<br>
+
+<center> <h1>Demographic information</h1> </center>
+
+### For the total sample:
+``` {r, eval=T, echo=F}
+table(df$gender) 
+table(df$education)
+```
+
+The largest part of the sample consists of women. Most of them have secondary education, but about third has a university degree. 
+<br>
+<br>
+Distribution, mean and sd of **age**: 
+```{r, eval=T, echo=F}
+table(df$age)
+#which is: 
+mean(df$age, na.rm=T)
+sd(df$age, na.rm=T)
+```
+The distribution of age appears to be approximately normal, with the mean age being 34 years. 
+<br>
+<br>
+
+### By latent group:
+```{r, eval=T, echo=F}
+table(df$lca_class) 
+t(table(df$lca_class, df$gender))
+t(table(df$lca_class, df$education))
+library(psych)
+t(aggregate(age ~ lca_class, data=df, mean))
+
+```
+I will perform the statistical test of independence in the next file to check whether groups differ on demographic variables. 
+

@@ -1,0 +1,52 @@
+---
+title: '[IPO2a] check IPO items'
+author: ''
+date: ''
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br>
+
+#### In .pdf format to reduce file size & keep readability. 
+
+<br>
+<br>
+
+First of all, let's have a look at the stucture of IPO items.
+```{r, echo=TRUE, eval=T, comment="", fig.width=18, fig.height=15}
+IPO_items_complete <- read.csv(file="./data/IPO_items_complete.csv")
+IPO_items_complete$X <- NULL
+
+library(corrplot)
+IPO_items_complete_M <- cor(IPO_items_complete)
+corrplot(IPO_items_complete_M, method="circle") 
+```
+
+As evident from this figure, there are no reversely coded items. This is good news, because although the instrument was not designed to be used as a severity scale (by using the total score), each item measures the same construct: personality integrity. In addition, judging from the pattern it seems that items seem to load on multiple factors. But we'll check this later. 
+<br>
+<br>
+
+## Checking the IPO items
+
+```{r, echo=T, eval=T, comment="", message=F, warning=F, fig.width=18, fig.height=12}
+library(reshape2)
+IPO_items_complete_melt <- melt(IPO_items_complete)
+
+library(ggplot2)
+ggplot(data=IPO_items_complete_melt, aes(x=value)) +
+  facet_wrap(~variable, scales="free_x") +
+  geom_histogram(binwidth=1)
+```
+
+Many items are not normally distributed (they are left skewed), so items will be treated as categorical variables in CFA. This may be a sign that IPO is more sensitive in the middle and upper severity of personality organisation than in the "low" severity (or well-organised) group. Alternatively, it may indicate that this is a low to medium severity sample in terms of personality organisation. 
+
+<br>
+
+In terms of data analysis, however, moderately skewed items will not be a problem, because the unit of data analysis on the IPO is the scales, not the items. And scales are approximately normally distributed (as you'll see in the next file). 
+

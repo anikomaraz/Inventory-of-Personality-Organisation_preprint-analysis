@@ -1,0 +1,355 @@
+---
+title: "[IPO8] diagnoses (Axis1 & Axis2)"
+author: ""
+date: ""
+output: 
+  html_document: 
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=T, comment = "")
+```
+
+<br>
+
+####*Note that you can see the code by clicking on the **"Code"** button on the right. *
+
+```{r, cache=T, echo=F, message=F, warning=F, error=F}
+df <- read.csv(file="/home/aniko/R/IPO/data/df_final.csv")
+# dim(df) # 181 rows and 606 (created an extra ID (=X) variable)
+
+library(plyr)
+df <- plyr::rename(df, c("X"="id"))
+
+df_names <- colnames(df)
+for(i in df_names) {
+  df[[i]] <- as.numeric(df[[i]])
+}
+
+df$gender <- as.factor(df$gender)
+df$education <- as.factor(df$education)
+df$lca_class <- as.factor(df$lca_class)
+
+# Now get the databases. 
+df_axis1_dg <- df[grep("^S1DG[1-9]$|S1DG10|S1DG11|
+                      |S1DG12|S1DG13|S1DG16|S1DG17|S1DG18|S1DG19|S1DG20|S1DG21|S1DG22|
+                       |S1DG25|S1DG26|S1DG27|S1DG28|S1DG29|S1DG30|S1DG31|S1DG32|S1DG33|
+                       |S1DG40|S1DG41|S1DG42|S1DG43|S1DG44|S1DG45|S1DG46|S1DG47|S1DG49|
+                       |S1DG53|S1DG54", names(df), value=T)]
+df_axis2_dg <- data.frame(df[grep("S7_32|S15_41|S24_50|S32_58|S40_66|S48_74|
+                       |S59_84SZ|S65_92|S72_101|S89_111|S104_121|S119_139", names(df), value=T)])
+df_axis2_sever <- data.frame(df[grep(
+                              "S1_25|S2_26|S3_27|S4_28|S5_29|S6_30|S7_31|S8_33|S9_34|
+                              |S10_35|S11_36|S12_37|S13_38|S14_39|S16_42|S17_43|
+                              |S18_44|S19_45|S20_46|S21_47|S22_48|S23_49|^S24|S25_51|
+                              |^S26|S27_52|S28_53|S29_54|S30_55|S31_56|S32_57|S33_59|
+                              |S34_60|S35_61|S36_62|S37_63|S38|S39_64|S40_65|S41_67|
+                              |S42_68|S43_69|S44_70|S45_71|S46|S47_72|S48_72|S49_75|
+                              |S50|S51|S52_76|S53|S54|S55_77|S56|S57|S57_78|S57_79|S57_80|
+                              |S57_81|S58_82|S59_84$|S60_85|S61_86|S62_87|S63_88|
+                              |S63_89|S64_90|S65_91|S66_93|S67_94|S68_95|S69_96|S69_97|
+                              |S70_98|S71_99|S72_100|S73_102|S74|S75_103|S76|S77_104|
+                              |S78|S79_105|S80_106|S81_107|S82|S83|S84|S85_108|S86|S87_109|
+                              |S88|S89_110|S90_112|S91_113|S92_114|S93|S94|S95|
+                              |S96_115|S97_116|S98|S99_117|S100_118|S101_119|S102|S103|
+                              |S104_120|S105_122|S105_123|S106_124|S107_125|S108_126|
+                              |S110_128|S111_129|S112_130|S113_131|S114_132|S115_133|
+                              |S116_134|S117_135|S118_136|S119_137|S119_138|S119_139", 
+                            names(df), value=T
+                              )])
+
+# Prepare the scales. 
+library(psych)
+
+axis1_dg.keys <- make.keys(df_axis1_dg, list(
+  axis1_dg_sum = c(1:40)
+))
+
+# df_axis1_dg$S1DG29  # there were no transsexual participants in this sample so this item was removed
+# df_axis1_dg$S1DG25
+# df_axis1_dg$S1DG20
+# df_axis1_dg$S1DG21
+# df_axis1_dg$S1DG30
+# df_axis1_dg$S1DG33
+## all of the above items were excluded because there were no such diagnoses (all of them were items to detect psychotic symptoms)
+
+
+axis1_catego.keys <- make.keys(df_axis1_dg, list(
+  anx = c("S1DG8", "S1DG9", "S1DG10", "S1DG11", "S1DG12", "S1DG16", 
+          "S1DG22", "S1DG41", "S1DG54"),
+  obs = c("S1DG5"), 
+  depr = c("S1DG4", "S1DG43"), 
+  bipol = c("S1DG31", "S1DG27", "S1DG28"), 
+  # psych = c("S1DG25", "S1DG20", "S1DG21", "S1DG30", "S1DG33"), 
+  somatof = c("S1DG17", "S1DG45", "S1DG46"), 
+  dissoc = c("S1DG18"), 
+  sud = c("S1DG7", "S1DG32", "S1DG40", "S1DG42", "S1DG44", "S1DG53"), 
+  ED_imp = c("S1DG2", "S1DG3", "S1DG13"), 
+  ED_rest = c("S1DG1") 
+  # gend_id = c("S1DG29")
+          ))
+  
+
+## let's recode the diagnoses so that only 3=positive, 2 and 1 == negative diagnosis
+axis2_dg_names <- names(df_axis2_dg)
+for(i in axis2_dg_names) {
+  df_axis2_dg[[i]][df_axis2_dg[[i]] == "1"] <- "0"
+  df_axis2_dg[[i]][df_axis2_dg[[i]] == "2"] <- "0"
+  df_axis2_dg[[i]][df_axis2_dg[[i]] == "3"] <- "1"
+}
+
+for(i in axis2_dg_names) {
+df_axis2_dg[[i]] <- as.numeric(df_axis2_dg[[i]])
+}
+
+axis2_dg.keys <- make.keys(df_axis2_dg, list(
+  axis2_dg_sum = c(1:12)
+))
+
+## we also need the information how many personality disorder symptom was actually positive. 
+## so we'll need to record these in the following way: 3=positive (1), 2 and 1 = negative (0) symptom
+axis2_sever_names <- colnames(df_axis2_sever)
+for(i in axis2_sever_names) {
+  df_axis2_sever[[i]][df_axis2_sever[[i]] == "1"] <- "0"
+  df_axis2_sever[[i]][df_axis2_sever[[i]] == "2"] <- "0"
+  df_axis2_sever[[i]][df_axis2_sever[[i]] == "3"] <- "1"
+}
+
+for(i in axis2_sever_names) {
+  df_axis2_sever[[i]] <- as.numeric(df_axis2_sever[[i]])
+}
+
+axis2_sever.keys <- make.keys(df_axis2_sever, list(
+  axis2_sever_sum = c(1:127)
+))
+
+# Let's calculate the scales. 
+
+axis1_dg_scores <- scoreItems(axis1_dg.keys, df_axis1_dg, totals=F, missing=T, impute="median")
+axis1_dg_scores_total <- scoreItems(axis1_dg.keys, df_axis1_dg, totals=T, missing=T, impute="median")
+# note that items 19, 20, 21, 25, 26, 29, 30 and 33 had no variance so they were deleted from keys.
+axis1_catego <- scoreItems(axis1_catego.keys, df_axis1_dg, totals=F, missing=T, impute="median")
+axis1_catego_total <- scoreItems(axis1_catego.keys, df_axis1_dg, totals=T, missing=T, impute="median")
+# print(axis1_catego, digits=2)
+axis2_dg_scores <- scoreItems(axis2_dg.keys, df_axis2_dg, totals=T)
+# axis2_dg_scores$scores
+axis2_sever_scores <- scoreItems(axis2_sever.keys, df_axis2_sever, totals=T, missing=T, impute="median")
+# note that S111_129 had no variance (no positive cases in this sample) so was deleted from keys. 
+```
+
+<br>
+<br>
+
+<center> <h1>Axis 1</h1> </center>
+
+<br>
+
+### Number of diagnoses present per latent class:
+``` {r, warning=F, message=F, eval=T}
+axis1_dg_scores <- data.frame(axis1_dg_scores$scores)
+axis1_dg_scores$lca_class <- df$lca_class
+# head(axis1_dg_scores)
+axis1_dg_scores$lca_class <- factor(axis1_dg_scores$lca_class, levels=c("3", "1", "2"), 
+                              labels=c("Well-integrated", "Moderately integrated", "Disintegrated"))
+
+library(ggplot2)
+ggplot(axis1_dg_scores, aes(x=lca_class, y=axis1_dg_sum, fill=lca_class)) +
+  geom_boxplot(color="black", lwd=1) +
+  coord_cartesian(ylim=c(-0.02,0.2)) +
+  theme_minimal(base_size=20) +
+  scale_fill_manual(values=c("green4", "blue", "red")) +
+  theme(legend.position="none", axis.text.x=element_text(colour="black")) +
+  labs(y="Mean number of Axis I. diagnoses", x="", color="", 
+       title = "") +
+  theme(legend.position="none")
+```
+
+Notice that the disintegrated group has slightly more Axis I. diagnoses but this isn't a significant difference. 
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+### Diagnoses according to **categories**:
+``` {r, eval=T, message=F, warning=F, fig.width=12, fig.height=8}
+df_axis1_categories <- data.frame(axis1_catego$scores)
+df_axis1_categories$lca_class <- df$lca_class 
+# head(df_axis1_categories)
+
+library(reshape2)
+df_axis1_categories_melt <- melt(df_axis1_categories, id="lca_class") 
+
+library(Rmisc)
+axis1_categories_plot <- summarySE(df_axis1_categories_melt, 
+                                   measurevar=c("value"), 
+                                   groupvars=c("lca_class", "variable"), na.rm=T)
+
+axis1_categories_plot$lca_class <- factor(axis1_categories_plot$lca_class, 
+                                          levels=c("2", "3", "1"), 
+                                          labels=c("Disintegrated", "Moderately integrated", "Well-integrated"))
+
+library(ggplot2)
+pd <- position_dodge(width=0.3)
+addline_format <- function(x, ...){
+  gsub('\\s', '\n', x)
+  }
+
+ggplot(axis1_categories_plot, 
+                             aes(x=variable, y=value, 
+                                 colour=lca_class, group=lca_class)) + 
+  coord_cartesian(ylim=c(0,0.35)) +
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), 
+                color="black", width=.3, size=1, position = pd) +
+  geom_line(size=1.5, position=pd) +
+  geom_point(size=1.5, position=pd) +
+  theme_minimal(base_size=20) +
+  theme(axis.text.x=element_text(angle=75, hjust=1)) +
+  scale_colour_manual(values = c("red", "blue", "green4")) +
+  labs(y="Scale mean", x="", color="", 
+       title = "")  +
+  scale_x_discrete(labels=addline_format(c(
+  "anx" = "Anxiety Disorders",
+  "obs" = "Obsessive Disorder", 
+  "depr" = "Depressive Disorders", 
+  "bipol" = "Bipolar Disorders", 
+  "somatof" = "Somatoform Disorders", 
+  "dissoc" = "Dissociative Disorder",  
+  "sud" = "Substance- Related Disorders", 
+  "ED_imp" = "Impulsive Eating Disorders", 
+  "ED_rest" = "Restrictive Anorexia Nervosa"),
+  breaks=unique(axis1_categories_plot$variable))) +
+  theme(legend.position = "top", legend.key.size= unit(4, "cm"), axis.text.x=element_text(colour="black"))
+
+```
+
+There are no substantial differences between groups when using the categories which describe Axis I. symptoms. 
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<center> <h1>Axis 2 (personality disorders)</h1> </center>
+
+<br>
+<br>
+
+
+### Number of diagnoses:
+```{r, eval=T}
+
+axis2_dg_scores <- data.frame(axis2_dg_scores$scores)
+axis2_dg_scores$lca_class <- df$lca_class
+
+# head(axis2_dg_scores)
+axis2_dg_scores$lca_class <- factor(axis2_dg_scores$lca_class, levels=c("1", "3", "2"), 
+                                        labels=c("Well-integrated", "Moderately integrated", "Disintegrated"))
+
+library(ggplot2)
+ggplot(axis2_dg_scores, aes(x=lca_class, y=axis2_dg_sum, fill=lca_class)) +
+  geom_boxplot(color="black", lwd=1) +
+  coord_cartesian(ylim=c(-1,8)) +
+  theme_minimal(base_size=20) +
+  scale_fill_manual(values=c("green4", "blue", "red")) +
+  theme(legend.position="none") +
+  labs(y="Mean number of Axis II. diagnoses", x="", colour="", 
+       title = "") +
+  theme(legend.position = "none", axis.text.x=element_text(colour="black"))
+```
+
+Although the trend is clearer on Axis 2 (personality disorders), the difference between groups is probably not significant given the overlaping confidence intervals. 
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+### Personality disorders **one by one**:
+```{r, eval=T, fig.width=12, fig.height=8}
+df_axis2_onebyone <- mutate(df_axis2_dg)
+df_axis2_onebyone$lca_class <- df$lca_class 
+
+library(reshape2)
+df_axis2_onebyone_melt <- melt(df_axis2_onebyone, id="lca_class") 
+
+library(Rmisc)
+axis2_onebyone_plot <- summarySE(df_axis2_onebyone_melt, 
+                                 measurevar=c("value"), 
+                                 groupvars=c("lca_class", "variable"), na.rm=T)
+
+# head(axis2_onebyone_plot)
+
+axis2_onebyone_plot$lca_class <- factor(axis2_onebyone_plot$lca_class, 
+                                        levels=c("2", "3", "1"), 
+                                        labels=c("Disintegrated", 
+                                                 "Moderately integrated", 
+                                                 "Well-integrated"))
+library(ggplot2)
+pd <- position_dodge(width=0.3)
+addline_format <- function(x, ...){
+  gsub('\\s', '\n', x)
+  }
+
+ggplot(axis2_onebyone_plot, aes(x=variable, y=value, colour=lca_class, group=lca_class)) + 
+  coord_cartesian(ylim=c(0,1)) +
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), color="black", width=.3, size=1, position = pd) +
+  geom_line(size=1.5, position=pd) +
+  geom_point(size=1.5, position=pd) +
+  theme_minimal(base_size=20) +
+  theme(axis.text.x=element_text(angle=75, hjust=1)) +
+  scale_colour_manual(values = c("red", "blue", "green4")) +
+  labs(y="Probability (0-1)", x="", color="", 
+       title = "")  +
+  scale_x_discrete(labels=addline_format(c(
+    "S7_32" = "Avoidant",
+    "S15_41" = "Dependent",
+    "S24_50" = "Obsessive- Compulsive",
+    "S32_58" = "Passive- Agressive",
+    "S40_66" = "Depressive",
+    "S48_74" = "Paranoid",
+    "S59_84SZ" = "Schizotypal",
+    "S65_92" = "Schizoid",
+    "S72_101" = "Histrionic",
+    "S89_111" = "Narcissistic",
+    "S104_121" = "Borderline",
+    "S119_139" = "Antisocial"),
+    breaks=unique(axis2_onebyone_plot$variable))) +
+  theme(legend.position ="top", legend.key.size=unit(5, "cm"), axis.text.x=element_text(colour="black"))
+
+```
+
+However, when personality disorders are "expanded", it is clear that latent class differences are driven by borderline and depressive personality disorder. 
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+### Number of severe (coded as 3) symptoms:
+``` {r, eval=T}
+
+axis2_sever_scores <- data.frame(axis2_sever_scores$scores)
+axis2_sever_scores$lca_class <- df$lca_class
+
+axis2_sever_scores$lca_class <- factor(axis2_sever_scores$lca_class, levels=c("1", "3", "2"), 
+                                        labels=c("Well-integrated", "Moderately integrated", "Disintegrated"))
+
+library(ggplot2)
+ggplot(axis2_sever_scores, aes(x=lca_class, y=axis2_sever_sum, fill=lca_class)) +
+  geom_boxplot(color="black", lwd=1) +
+  coord_cartesian(ylim=c(0, 55)) +
+  theme_minimal(base_size=18) +
+  scale_fill_manual(values=c("green4", "blue", "red")) +
+  theme(legend.position="none") +
+  labs(y="Number of Axis II. symptoms met (0-127)", x="", color="", 
+       title = "") +
+  theme(legend.position = "none", axis.text.x=element_text(colour="black"))
+
+```
+
+Again, it appears as a clear trend that the Disintegrated group has more "severe" personality disorder symptoms, this group difference in itself is not significant given the large variance. 

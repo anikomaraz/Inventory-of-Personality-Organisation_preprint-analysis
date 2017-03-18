@@ -1,0 +1,84 @@
+---
+title: "[IPO5] Prepare Final Database"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, comment="")
+options(width=120)
+```
+
+<br>
+
+###This is the raw dataset:
+```{r, echo=T, eval=T, warning=F, message=F}
+df_patient <- read.csv("./data/IPO_Beteg_TCI_SCL2_datjav.csv", header=T, nrows = 182)  # because only the first 182 rows contained data on IPO
+df_patient <- subset(df_patient, KOR2 > 17 | is.na(KOR2)) 
+dim(df_patient)
+```
+
+###This is where we had the class information:
+```{r, echo=T, eval=T}
+lca_class <- read.table("~/R/IPO/data/lca_membership.txt", 
+                        col.names=c("PPD", "RT", "ID", "AGG", "MV", "lca_class_prob", "lca_class"))
+```
+
+###And now the final dataset:
+```{r, echo=T, eval=T}
+df_patient_class <- cbind(df_patient, lca_class$lca_class) # given that none of the calculations involved re-sorting rows
+dim(df_patient_class)
+```
+
+<br>
+
+###Let's grep only the data that will be used in this analysis.
+```{r, eval=T, echo=T}
+df_raw <- df_patient_class[grep("^lca_class|^KOR2|^NEM3|^ISK5|
+                              |^SCL|  
+                              |^SZSZK|
+                              |^S1DG|
+                              |^STAX|
+                              |^SCID|
+                              |^DES|
+                              |S1_25|S2_26|S3_27|S4_28|S5_29|S6_30|S7_31|S7_32|S8_33|S9_34|
+                              |S10_35|S11_36|S12_37|S13_38|S14_39|S15_40|S15_41|S16_42|S17_43|
+                              |S18_44|S19_45|S20_46|S21_47|S22_48|S23_49|S24|S24_50|S25_51|
+                              |S26|S27_52|S28_53|S29_54|S30_55|S31_56|S32_57|S32_58|S33_59|
+                              |S34_60|S35_61|S36_62|S37_63|S38|S39_64|S40_65|S40_66|S41_67|
+                              |S42_68|S43_69|S44_70|S45_71|S46|S47_72|S48_72|S48_74|S49_75|
+                              |S50|S51|S52_76|S53|S54|S55_77|S56|S57|S57_78|S57_79|S57_80|
+                              |S57_81|S58_82|S59_84|S59_84SZ|S60_85|S61_86|S62_87|S63_88|
+                              |S63_89|S64_90|S65_91|S65_92|S66_93|S67_94|S68_95|S69_96|S69_97|
+                              |S70_98|S71_99|S72_100|S72_101|S73_102|S74|S75_103|S76|S77_104|
+                              |S78|S79_105|S80_106|S81_107|S82|S83|S84|S85_108|S86|S87_109|
+                              |S88|S89_110|S89_111|S90_112|S91_113|S92_114|S93|S94|S95|
+                              |S96_115|S97_116|S98|S99_117|S100_118|S101_119|S102|S103|
+                              |S104_120|S104_121|S105_122|S105_123|S106_124|S107_125|S108_126|
+                              |S109_127|S110_128|S111_129|S112_130|S113_131|S114_132|S115_133|
+                              |S116_134|S117_135|S118_136|S119_137|S119_138|S119_139|S_140|
+                              |S_141|S_142|S_143|S_144|S_145|S_146|S_147|S_148", 
+                              names(df_patient_class), value=T)]
+
+df_raw$SCID1VAN <- NULL # this is something else, we won't need it
+dim(df_raw)  
+```
+
+
+=181 rows and 584 columns which is what we expected based on item numbers: 
+4 demogr info (class, age, gender and education) + 90 SCL + 55 S1DG + 119 SCID + 28 DES + 57 STAXI + 83 SZSZK (IPO items)+ 149 other S_xx items.
+
+<br>
+
+###Final touches
+```{r, eval=T, echo=T}
+library(plyr)
+df_raw <- plyr::rename(df_raw, c("KOR2"="age", "NEM3"="gender", "ISK5"="education", 
+                                 "lca_class$lca_class"="lca_class"))
+write.csv(df_raw, file="./data/df_final.csv")
+dim(df_raw)
+names(df_raw)
+```
+
+

@@ -1,0 +1,241 @@
+---
+title: "[IPO7] SCL DES STAXI  plot with LCA"
+author: ""
+date: ""
+output: 
+  html_document: 
+    code_folding: hide
+---
+
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo=T, comment = "")
+```
+
+<br>
+<br>
+
+####*Note that you can unhide the code by clicking on the button **"Code"** on the right.* 
+<br>
+<br>
+
+Data is still the same: 
+
+```{r, cache=T, echo=F, message=F, warning=F, error=F}
+df <- read.csv(file="/home/aniko/R/IPO/data/df_final.csv")
+dim(df) # 181 rows and 585 (created an extra ID (=X) variable)
+
+library(plyr)
+df <- plyr::rename(df, c("X"="id"))
+
+df_names <- colnames(df)
+for(i in df_names) {
+  df[[i]] <- as.numeric(df[[i]])
+}
+
+df$gender <- as.factor(df$gender)
+df$education <- as.factor(df$education)
+df$lca_class <- as.factor(df$lca_class)
+
+# Now get the databases. 
+df_staxi <- df[grep("^STAX", names(df), value=T)]
+df_des <- df[grep("^DES", names(df), value=T)]
+df_scl <- df[grep("^SCL", names(df), value=T)]
+
+# Prepare the scales. 
+library(psych)
+scl.keys <- make.keys(df_scl, list(
+  som = c(1, 12, 27, 4, 40, 42, 48, 49, 52, 53, 56, 58), # Somatization
+  ocd = c(10, 28, 3, 38, 45, 46, 51, 55, 65, 9), # Obsession
+  hos = c(11, 24, 63, 67, 74), # Hostility
+  pho = c(13, 25, 47, 50, 70, 75, 82), # Phobic Anxiety
+  dep = c(14, 15, 20, 22, 26, 29, 30, 31, 32, 5, 54, 71, 79), # Depression
+  psy = c(16, 35, 62, 7, 77, 84, 85, 87, 88, 90), # Psychoticism
+  anx = c(17, 2, 23, 33, 39, 57, 72, 78, 80, 86), # Anxiety
+  par = c(18, 43, 68, 76, 8, 83), # Paranoia
+  int = c(21, 34, 36, 37, 41, 6, 61, 69, 73), # Interpersonal Sensitivity
+  SUM = c(1:90)
+))
+
+staxi.keys <- make.keys(df_staxi, list(  # note that I translated the scale names from Hun. Original names need to be checked
+  state = c(1:25), # State Anger
+  expr = c(26:57), # Anger expression index
+  ang_fe = c(1, 2, 3, 6, 10), # Feeling of anger
+  ang_ve = c(4, 9, 12, 13, 15), # Verbal expression of anger
+  ang_ph = c(5, 7, 8, 11, 14), # Bodily (physical) expression of anger
+  ang_te = c(16, 17, 18, 21), # Angry temperament
+  ang_re = c(19, 20, 23, 25), # Anger reaction
+  ang_expr = c(27, 31, 35, 39, 43, 47, 51, 55), # Expression of anger 
+  ang_rep = c(29, 33, 37, 41, 45, 49, 53, 57), # Repression of anger
+  ang_expr_ctrl = c(26, 30, 34, 38, 42, 46, 50, 54), # Controlling the expression of anger
+  ang_rep_ctrl = c(28, 32, 36, 40, 44, 48, 52, 56) # Controlling the repression of anger
+  ))
+
+des.keys <- make.keys(df_des, list(
+  amn = c(3, 4, 5, 6, 8, 10, 25, 26), # Amnesia
+  abs = c(2, 14, 15, 16, 17, 18, 20, 22, 23), # Absorption in imagination
+  depers = c(7, 11, 12, 13, 27, 28) # Depersonalisation-derealisation
+))
+
+
+
+# Let's calculate the scales. 
+SCL_scores <- scoreItems(scl.keys, df_scl, totals=F, missing=TRUE, impute="median")
+# print(SCL_scores$alpha, digits=2)
+STAXI_scores <- scoreItems(staxi.keys, df_staxi, totals=F, missing=TRUE, impute="median") 
+# print(STAX_scores$alpha, digits=2)
+# IPO_scales_sum  # don't forget we also had this. 
+DES_scores <- scoreItems(des.keys, df_des, totals=F, missing=TRUE, impute="median")
+#print(DES_scores$alpha, digits=2)
+```
+
+<br>
+
+# Symptom severity (SCL-90):
+``` {r, message=F, warning=F, eval=T, fig.width=12, fig.height=7}
+scl_scores <- data.frame(SCL_scores$scores)
+scl_scores$SUM <- NULL
+scl_scores$lca_class <- df$lca_class
+
+library(reshape2)
+scl_scores_lca_melt <- melt(scl_scores, id="lca_class") 
+
+library(Rmisc)
+scl_plot <- summarySE(scl_scores_lca_melt, measurevar=c("value"), groupvars=c("lca_class", "variable"), na.rm=T)
+
+scl_plot$lca_class <- factor(scl_plot$lca_class, 
+                             levels=c("2", "3", "1"), 
+                             labels=c("Disintegrated", "Moderately integrated", "Well-integrated"))
+
+library(ggplot2)
+pd <- position_dodge(width=0.3)
+addline_format <- function(x, ...){
+  gsub('\\s', '\n', x)
+  }
+
+ggplot(scl_plot, aes(x=variable, y=value, 
+                              colour=lca_class, group=lca_class)) + 
+  coord_cartesian(ylim=c(0,4)) +
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), 
+                color="black", width=.3, size=1, 
+                position = pd) +
+  geom_line(size=1.5, position=pd) +
+  geom_point(size=1.5, position=pd) +
+  scale_colour_manual(values = c("red","blue", "green4")) +
+  theme_minimal(base_size=20) +
+  labs(y="Scale mean", x="", color="", title = "") + 
+  scale_x_discrete(labels=addline_format(c("som" = "Somatization", 
+                            "ocd" = "Obsession", 
+                            "hos" = "Hostility", 
+                            "pho" = "Phobic Anxiety", 
+                            "dep" = "Depression", 
+                            "psy" = "Psychoticism",
+                            "anx" = "Anxiety", 
+                            "par" = "Paranoia", 
+                            "int" = "Interpersonal Sensitivity"), 
+                            breaks=unique(g_scl$variable))) +
+  theme(legend.position= "top", 
+        legend.key.size = unit(3, "cm"),
+        axis.text.x=element_text(colour="black"))
+```
+
+Group differences on SCL-90 with 95% confidence interval. Clearly, the Disintegrated group scores higher on distress. Note that the extent of personality integration (as measured with IPO, depicted earlier) corresponds to the extent of psychiatric symptoms between latent classes. 
+
+<br>
+<br>
+
+# State-Trait Expression Inventory (STAXI): 
+``` {r, message=F, warning=F, fig.width=14, fig.height=8}
+ staxi_scores <- data.frame(STAXI_scores$scores)
+ staxi_scores$lca_class <- df$lca_class
+ # head(stax_scores_lca)
+ staxi_scores_lca_melt <- melt(staxi_scores, id="lca_class") 
+ 
+library(Rmisc)
+staxi_plot <- summarySE(staxi_scores_lca_melt, measurevar=c("value"),
+                         groupvars=c("lca_class", "variable"), na.rm=T)
+staxi_plot$lca_class <- factor(staxi_plot$lca_class, levels=c("2", "3", "1"), 
+                              labels=c("Disintegrated", "Moderately integrated", "Well-integrated"))
+
+library(ggplot2)
+pd <- position_dodge(width=0.3)
+addline_format <- function(x, ...){
+  gsub('\\s', '\n', x)
+  }
+
+ggplot(staxi_plot, aes(x=variable, y=value, 
+                      colour=lca_class, group=lca_class)) + 
+  coord_cartesian(ylim=c(0.5,4)) +
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), 
+                color="black", width=.3, size=1, position = pd) +
+  geom_line(size=1.5, position=pd) +
+  geom_point(size=1.5, position=pd) +
+  theme_minimal(base_size=20) +
+  scale_colour_manual(values = c("red", "blue", "green4")) +
+  labs(y="Scale mean", x="", color="", title = "")  +
+  scale_x_discrete(labels=addline_format(c(
+    "state" = "State Anger",  
+    "expr" = "Anger expression index",
+    "ang_fe" = "Feeling angry", 
+    "ang_ve" = "Feel like expressing anger verbally",  
+    "ang_ph" = "Feel like expressing anger physically",  
+    "ang_te" = "Trait anger", 
+    "ang_re" = "Angry temperament", 
+    "ang_expr" = "Anger expression - out",  
+    "ang_rep" = "Anger expression - in", 
+    "ang_expr_ctrl" = "Anger control - out", 
+    "ang_rep_ctrl" = "Anger control - in"), 
+    breaks=unique(staxi_plot$variable))) + 
+  theme(legend.position="top", 
+        legend.key.size = unit(3, "cm"), 
+        axis.text.x=element_text(colour="black"))
+
+```
+
+This is the maximum number of scales calculated from STAX items and yes, it is perhaps too many... But: as a trend, Disintegrated individuals seem to be more "angry" than the other 2 groups. The difference is the largest in scales of temperament, reaction and repression. This resonates with the literature that says that patients suffering from borderline (or other severe) personality disorder have difficulties controlling their anger despite having higher tendencies of anger reaction on the biological level (enlarged amygdala and weakened frontal lobe connections to allow for controlling). 
+
+<br>
+<br>
+
+# Dissociative Experiences Scale (DES): 
+``` {r, message=F, warning=F}
+des_scores <- data.frame(DES_scores$scores)
+des_scores$lca_class <- df$lca_class
+des_scores_lca_melt <- melt(des_scores, id="lca_class") 
+
+library(Rmisc)
+des_plot <- summarySE(des_scores_lca_melt, measurevar=c("value"), groupvars=c("lca_class", "variable"), na.rm=T)
+des_plot$lca_class <- factor(des_plot$lca_class, 
+                             levels=c("2", "3", "1"), 
+                            labels=c("Disintegrated", "Moderately integrated", "Well-integrated"))
+
+library(ggplot2)
+pd <- position_dodge(width=0.3)
+addline_format <- function(x, ...){
+  gsub('\\s', '\n', x)
+}
+
+ggplot(des_plot, aes(x=variable, y=value, colour=lca_class, group=lca_class)) + 
+  coord_cartesian(ylim=c(0,60)) +
+  geom_errorbar(aes(ymin=value-ci, ymax=value+ci), 
+                color="black", width=.3, size=1, position = pd) +
+  geom_line(size=1.5, position=pd) +
+  geom_point(size=1.5, position=pd) +
+  theme_minimal(base_size=20) +
+  scale_colour_manual(values = c("red", "blue", "green4")) +
+  labs(y="Mean %", x="", color="", 
+       title = "")  +
+  scale_x_discrete(labels=addline_format(c(
+    "amn" = "Amnesia",
+    "abs" = "Absorption in imagination",
+    "depers" = "Depersonalisation- Derealisation"
+   ), 
+    breaks=unique(des_plot$variable))) +
+  theme(legend.position="top", 
+        legend.key.size = unit(1, "cm"), 
+        axis.text.x=element_text(colour="black"))
+```
+
+Although psychotic patients were excluded from the sample, clearly, severly personality disordered individuals display more dissociative experiences than others. This is especially evident in the "Absorption in imagination" scale, which indicates vivid projective mechanisms as a way of experiencing reality. 
+
+

@@ -1,0 +1,105 @@
+---
+title: "[IPO4] Latent Class Analysis (LCA)"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, comment="")
+```
+
+<br>
+
+> I tried a couple of solutions in R, but none of the Latent Class Analyses / Mixture modeling provided
+the solution that MPlus did. Therefore in order to be on the absolute safe side and to comply with publishing standards I decided to run the analyses in MPlus, and then transfer the results to R. <br>
+This is the code I used to export data: <br>
+#IPO_scales_sum <- data.frame(IPO_scales_sum) <br>
+#library(MplusAutomation) <br>
+#prepareMplusData(IPO_scales_sum, "/home/aniko/R/IPO/IPOscalesMplus_mean2.dat")
+
+<br>
+
+## MPlus model specifications
+You can check the [final MPlus output (and input) here](http://anikomaraz.com/wp-content/uploads/2017/02/FINAL_lca_ipo_3f_3class_javitott2.txt). Note that the order of the classes is arbitrary, but you should get the same fit indices (just a different class order) when running the input. 
+
+I ran 3 models (MPlus specification set to *Type:mixture*, using default settings): <br>
+- Model 1: using the item summary of 5 factors (5F_sum) <br>
+- Model 2: using the mean of 5 factors (5F_mean) (just to test what happens if I use scale means instead of totals) <br>
+- Model 3: using the mean of 3 (primary) factors (3F) <br>
+Each model tested a 2-5 class solution. 
+
+```{r, echo=T, eval=T}
+
+# import fit indices of the 3X4 models: 
+lca_fit <- read.csv("~/R/IPO/data/lca_mplus_fit.csv", header=T, sep = ",")
+lca_fit <- data.frame(lca_fit, stringsAsFactors = F)
+lca_fit <- plyr:: rename(lca_fit, c("X"= "class", "X.1" = "model"))
+print(lca_fit)
+```
+If you are unfamiliar with latent class fit indices, use [this link](http://davidakenny.net/cm/fit.htm) for a good interpretation of fit indices. 
+
+
+Based on AIC, BIC and SSAIC models with a higher number of classes seems to fit better, 
+but the difference is not substantial. However, fit indices clearly imply that
+the model with 3 factors is superior to 5 factors, which is also in line with the initial 
+theoretical model which described the first 3 factors as "primary", and the remaining 2 as "additional". 
+The first non-significant LMR value is at 4 classes (p=0.5247), so
+the 3 classes model with 3 factors seems to fit the best. Entropy is still acceptable 
+(0.83, has to be >0.8). 
+<br>
+<br>
+
+Note, that the final, 3-class solution did not reach local maxima, and had excellent absolute and relative fit indices. Average class assignment probabilities were 0.92, 0.91 and 0.94 respectively for the classes (Class 1="Well-integrated", Class 2 = "Disintegrated", Class 3 = "Moderately integrated") (they should be >0.80)
+
+<br>
+
+## Read the MPlus output (including class membership) in R
+
+``` {r, echo=T, eval=T}
+lca_class <- read.table("~/R/IPO/data/lca_membership.txt", 
+                        col.names=c("PPD", "RT", "ID", "cprob1", "cprob2", "cprob3", "lca_class"))
+head(lca_class)
+```
+"cprob" columns contain the probability of the given row (patient) belonging to the given class. I could use this for the remaining calculations (especially group differences using Wald test), but classes are homogenous enough to be treated as separate groups. 
+
+<br>
+
+## Plot class means
+```{r, echo=T, eval=T, message=F, warning=F}
+library(reshape2)
+prim_factors <- c("PPD", "RT", "ID", "lca_class") #based on primary factors only
+lca_class_factors <- lca_class[prim_factors]
+lca_class_melt <- melt(lca_class_factors, id="lca_class")
+
+library(Rmisc)
+lca_plot <- summarySE(lca_class_melt, measurevar=c("value"), groupvars=c("lca_class", "variable"))
+lca_plot$lca_class <- as.factor(lca_plot$lca_class)
+lca_plot$lca_class <- factor(lca_plot$lca_class, 
+                               levels=c("2", "3", "1"), 
+                               labels = c("Disintegrated (n=23)", 
+                                          "Moderately integrated (n=91)", 
+                                          "Well-integrated (n=67)"))
+table(lca_class$lca_class) ## there are N=67, N=23 and N=91 participants in each class, which sums up to 181. 
+```
+
+```{r, eval=T, echo=T, fig.width=8, fig.height=6, message=F, warning=F}
+library(ggplot2)
+ggplot(lca_plot, aes(x=variable, y=value, color=lca_class, group=lca_class)) + 
+    coord_cartesian(ylim=c(0.5,5)) +
+    geom_errorbar(aes(ymin=value-ci, ymax=value+ci), color="black", width=.1, size=1) +
+    geom_line(size=1.5) +
+    geom_point(size=1.5) +
+    theme_minimal(base_size=20) +
+    scale_colour_manual(values = c("red", "blue","green4")) +
+    labs(y="Scale mean", x="", color="Latent Class: ") + 
+  scale_x_discrete(labels=c(
+    "PPD" = "Primitive Psych Defenses",
+    "RT" = "Reality Testing",
+    "ID" = "Identity Diffusion")) +
+  theme(legend.position= c(0.8, 0.9), 
+        legend.background = element_rect(colour="white"), 
+        legend.key.size = unit(0.5, "cm"))
+```
+
+Classes are nicely separated and appear to be homogeneous. 

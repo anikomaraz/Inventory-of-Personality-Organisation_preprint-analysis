@@ -1,0 +1,103 @@
+---
+title: "[IPO1] Prepare data (and impute IPO)"
+author: ""
+date: ""
+output:
+  html_document: default
+  pdf_document: default
+---
+  
+
+```{r setup, cache=T, eval=T, echo=F}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+options(width=100)
+```
+
+<br>
+<br>
+
+## Read data
+
+```{r, echo=T, eval=T, comment=""}
+df_patient <- read.csv("./data/IPO_Beteg_TCI_SCL2_datjav.csv", header=T, sep=",") 
+dim(df_patient)
+table(df_patient$KOR2 < 18)  #KOR2=age
+```
+Unfortunately there is a 17-year old in the sample that has to be removed. 
+
+```{r, echo=TRUE, eval=T, comment=""}
+df_patient <- subset(df_patient, KOR2 > 17 | is.na(KOR2)) 
+dim(df_patient) 
+```
+
+So this leaves 187 patients' data on 1399 variables for analysis.
+
+<br>
+<br>
+
+# Missing data
+
+Let's have a look at missing data structure of IPO to (hopefully) save some data by imputing. 
+```{r, echo=TRUE, eval=T, comment="", fig.width=8, message=F, warning=F, fig.width=14}
+library(VIM)
+IPO_items <- df_patient[grep("^SZSZK", names(df_patient), value=T)]
+aggr_plot <- aggr(IPO_items, col=c('navyblue','red'), numbers=T, sortVars=F, 
+                  labels=names(IPO_items), cex.axis=0.9, cex.lab = 1.2, gap=1.2,
+                  combined=F, 
+                  ylab=c("Histogram of missing data","Pattern"))
+
+```
+
+87.7% of data are not missing any value (see plot on the right hand side), and 3.2% (so 6 participants) miss data on all IPO items. These will have to be excluded from the final database.  Other than this the distribution of missing data seems random to me. 
+In terms of missing data of the items, Items 33 and 24 miss most data, although only 4.8% which isn't very much.  So we can proceed with data imputation. 
+
+<br>
+
+So we have 181 rows with SOME data and 6 rows with no data on IPO. 
+<br>
+Note the completely missing data rows at the end (last 6 rows). These will need to be omitted for imputation purposes.
+```{r, echo=TRUE, eval=T, comment=""}
+rowSums(is.na(IPO_items))
+```
+
+
+<br>
+<br>
+
+# Data imputation 
+
+```{r, echo=TRUE, eval=T, comment="", message=F}
+# So we want to get rid of rows which contain no data.
+IPO_items_noBlankRow <- df_patient[grep("^SZSZK", names(df_patient), value=T)][!(rowSums(is.na(IPO_items)) == "83"),] 
+
+# The rest can be inputed:
+dim(IPO_items_noBlankRow) 
+```
+
+``` {r, echo=T, eval=T, results="hide", include=T, message=F}
+# let's do the imputation 
+library(mice)
+IPO_items_imputed <- mice(IPO_items_noBlankRow, m=2, maxit=50, method="pmm", seed=1239)
+```
+
+```{r, echo=T, eval=T, message=F}
+# and pick the 2nd imputed matrix as the final dataset which hopefully contains no missing data
+IPO_items_complete <- complete(IPO_items_imputed, 2) 
+dim(IPO_items_complete)
+```
+
+So, are there any missing data?
+```{r, echo=TRUE, eval=T, comment=""}
+rowSums(is.na(IPO_items_complete))
+```
+No more missing data here.
+
+<br>
+
+Finally, save the final, imputed version of IPO items.  
+```{r, echo=T, eval=T, comment=""}
+dim(IPO_items_complete)
+write.csv(IPO_items_complete, file="./data/IPO_items_complete.csv")
+```
+
+

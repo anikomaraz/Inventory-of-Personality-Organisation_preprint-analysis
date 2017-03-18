@@ -1,0 +1,76 @@
+---
+title: '[IPO2b] check IPO scales'
+author: ''
+date: ''
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br>
+<br>
+
+First of all, I'd like to check whether scales are normally distributed. This is important for the latent class analysis and for later, to assess group differences. 
+
+```{r, eval=T, echo=TRUE, comment="", message=F, warning=F, fig.width=14, fig.height=8}
+
+## Create the dataframe. 
+IPO_items_complete <- read.csv(file="./data/IPO_items_complete.csv")
+IPO_items_complete$X <- NULL # row index is not needed here
+## we need the values numeric (instead of integer)
+IPO_item_names <- colnames(IPO_items_complete)
+  for(i in IPO_item_names) {
+  IPO_items_complete[[i]] <- as.numeric(IPO_items_complete[[i]])
+  }
+
+## let's calculate the IPO scales
+library(psych)
+ipo.keys <- make.keys(IPO_items_complete, list(
+  PPD = c(1:16), # primitive psychological defenses
+  RT = c(17:37), # reality testing
+  ID = c(38:57), # identity diffusion
+  AGG = c(58:75), # aggression
+  MV = c(6, 14, 17, 76:83) # moral values
+  ))
+IPO_scales_sum <- data.frame(scoreItems(ipo.keys, IPO_items_complete, totals=F)$scores)
+
+## plot scale means
+par(mfrow=c(3, 2), mar=c(4, 4, 2, 1))
+hist(IPO_scales_sum$PPD, main="Primitive Psychological Defenses", xlab = "", breaks = 40)
+hist(IPO_scales_sum$RT, main="Reality Testing", xlab = "", breaks = 40)
+hist(IPO_scales_sum$ID, main="Identity Diffusion", xlab = "", breaks = 40)
+hist(IPO_scales_sum$AGG, main="Aggression", xlab = "", breaks = 40)
+hist(IPO_scales_sum$MV, main="Moral Values", xlab = "", breaks = 40)
+```
+
+The Aggression scale appears to be left-scewed, but the other scales can be treated as approximately normally distributed. 
+
+Let's check normal distribution **statistically** using the Shapiro-Wilk test (W) and Anderson-Darling test (AD). 
+
+```{r, eval=T, echo=T}
+library(nortest)
+
+df_IPOnorm <- data.frame("W" = numeric(), "p_W" = numeric(), 
+                         "AD" = numeric(), "p_AD" = numeric())
+
+for (i in 1:ncol(IPO_scales_sum)) {
+  columns <- names(IPO_scales_sum[i])
+  shapiroResult <- shapiro.test(IPO_scales_sum[,i])
+  ADResult <- ad.test(IPO_scales_sum[,i])
+  newRow <- list(shapiroResult[1], 
+                 shapiroResult[2], 
+                 ADResult[1], 
+                 ADResult[2])
+  df_IPOnorm[names(IPO_scales_sum[i]), ] <- newRow
+  }
+
+print(df_IPOnorm)
+
+``` 
+PPD and RT appear to be normally distributed, but not the other scales. This will not affect the Latent Class Analysis, but violates the assumption of ANOVA. 
+
+

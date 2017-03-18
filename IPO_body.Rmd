@@ -1,0 +1,163 @@
+---
+title: "Inventory of Personality Organisation (IPO) instrument validity"
+author: "AMaraz"
+date: "February 24, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+### *This is a very brief summary of the study to validate IPO. Results are now under publication, so please treat it as **confidential**. I will post the final publication as soon as it becomes available. *
+
+<br>
+
+<center> <h2> Background </h2> </center>
+
+<br>
+
+The Inventory of Personality Organisation (IPO): measures the level of personality integrity based on a theory rooted in psychoanalysis. Kernberg (1984, 1996) defined the level of personality organization as an individual's position on each of three separate components in a [multidimensional model](https://www.mentalhelp.net/articles/the-three-levels-of-personality-organization/): 
+<br>
+
+1. *neurotic level*: the "healthiest" level, 
+2. *psychotic level*: severly compromised personality organisation, 
+3. *borderline level*: in between the two. Reality testing generally intact, but fragmented sense of self and others  
+<br>
+
+There are a few personality components the level of which is associated with the integrity of the personality, and thus result in an individual being classified in one of the above categories. These components are measured via the IPO. 
+
+<br>
+
+The **aim of this project** was to see whether people (participants/patients) can be divided into groups of severity based on the components (dimensions) of IPO, so if we can empirically establish connection between the "levels" and the "components" of personality beyond theory. If levels (and thus groups of people) can be identified, their validity will be verified according to other measures which are associated with personality integration: 
+1. (1) symptom severity, (2) anger, (3) dissociation 
+2. the presence of DSM diagnoses (Axis 1. and Axis 2.) assessed by a trained consultant psychiatrist or clinical psychologist. 
+
+<br>
+
+####Where is the data from? 
+
+Data were collected between 2006 and 2015 from an inpatient psychiatric ward. Altogether, 188 patients took part in the study. They were all seen by a consultant psychiatrist or clinical psychologist for their diagnoses, but filled out the self-report measures on their own. 
+
+<br>
+
+####Which questionnaires did we use?  
+
+The **Inventory of Personality Organisation** [IPO](https://ppw.kuleuven.be/okp/_pdf/Smits2009TIOPO.pdf) contains 83 items, which load on 3 primary (21 items in Identity diffusion, 16 items on Primitive psychological defenses, and 20 items on Impaired reality testing) and 2 additional factors (Aggression and Moral values). Items are rated on a five-point Likert skale, from never true to always true. <br>
+> See also: Lenzenweger, M. F., Clarkin, J. F., Kernberg, O. F., & Foelsch, P. A. (2001). The Inventory of Personality Organization: psychometric properties, factorial composition, and criterion relations with affect, aggressive dyscontrol, psychosis proneness, and self-domains in a nonclinical sample. *Psychological Assessment*, 13(4), 577. <br>
+<br>
+The **Symptom Checklist-90-R** [SCL-90](https://en.wikipedia.org/wiki/Symptom_Checklist_90) is a brief self-report measure of psychiatric symptoms (and severity), largely based on Axis 1 diagnoses (therefore provides a SUBJECTIVE measure of symptom severity). <br>
+<br>
+The **Dissociative Experiences Scale** [DES](http://onlinelibrary.wiley.com/doi/10.1002/9781118093146.app1/pdf) containes 28 items and measures dissociative experiences (high scores may be an indication of PTSD). <br>
+<br>
+Finall, the **State-Trait Anger Expression Inventory-2** [STAXI-2](http://www.sigmaassessmentsystems.com/assessments/state-trait-anger-expression-inventory-2/) (see also [this link](http://www4.parinc.com/WebUploads/samplerpts/STAXI2_IR.pdf)) is a 57-item inventory to measure the intensity of anger and the disposition to experience angry feelings. 
+
+<br>
+<br>
+
+<center> <h2> Data analysis </h2> </center>
+
+<br>
+
+<style>
+div.blue pre.r {background-color: lightblue; }
+</style>
+
+<div class = "blue">
+```{r, eval=F, echo=T}
+=================================
+How to read the analysis?
+=================================
+
+The information provided below VERY BRIEFLY reflects the idea of data analysis and describes the main results. If you'd like to know more (and why shouldn't you? ;)  ), then click on the links for the data analysis files written in R. 
+
+=================================
+Want to repeat? 
+=================================
+Theoretically, if you copy the code bits (with gray background) in the data analysis files, you should get the same results as I did. If you need the dataset, then please e-mail me.  
+
+If you are experiencing issues with package compatibility, then run the following code: 
+  library(checkpoint)
+  checkpoint("2017-01-17")
+This will ensure that you are using the same package versions that I did, so there shouldn't be any related errors. 
+
+```
+</div>
+
+<br>
+
+### 1. Getting the data
+I received a database with 1399 columns and 188 rows. There was one patient under 18 years of age who had to be excluded for ethical reasons. Then I explored the missing data pattern, and turned out that 6 participants had no data on the IPO questionnaire. Given that IPO was the instrument to be validated, these 6 rows (6 participants' data) had to be excluded. Then I used data imputation where data were missing to save as much information as possible. This approach left [181 patients' data for analysis](http://anikomaraz.com/wp-content/uploads/2017/03/IPO1_dataprep.html) with 98% initial data on IPO and 2% imputed.   
+<br>
+Having a look at item and scale quality revealed 3 things: 
+About the [items](http://anikomaraz.com/wp-content/uploads/2017/03/IPO2a_IPO_items.pdf):<br>
+
+1. Items of IPO correlate with one another which is good news because it means that they measure the same construct
+2. The distrubution of IPO items is "good enough", but they seem to be more sensitive in the middle and upper severity region of personality organisation
+About the [scales](http://anikomaraz.com/wp-content/uploads/2017/03/IPO2b_IPO_Scales.html): <br>
+3. The first 3 (primary) IPO scales are approximately normally distributed, although  the 3rd scales failed the (very strict) normality test. 
+
+<br>
+Next, in order to check the factor structure of the initial five-factor solution of IPO, I carried out a [confirmatory factor analysis (CFA)](http://anikomaraz.com/wp-content/uploads/2017/03/IPO3_CFA.html). Given the non-normal distribution of items, I used the WLSMV method (instead of MLR).  Luckily, the model indicated excellent fit to the data (just as an indication: CFI=0.995, TLI=0.995, RMSEA=0.014, SRMR=0.09). 
+
+<br>
+
+### 2. Latent class analysis
+Latent class analysis (as a type of mixture modeling) was designed to uncover groups of cases/participants in the data. In this case the variables used for classification are continous (scale means), not categorical, so "latent profile analysis" would be a more suitable term, but latent class analysis is commonly used for both, so I'll just proceed with LCA. I tested several alternatives varying the number of classes (2 to 5) and the number of IPO factors (3 primary vs. 5 "all-in" factor solutions). Given the fit indices the [3-class 3-factor model](http://anikomaraz.com/wp-content/uploads/2017/03/IPO4_LCA.html) appeared to be the best. Classes are reasonably homogenous on the variables used for prediction (3 primary factors). Classes appeared to be separated according to severity, thus were labelled as: 
+
+1. "Well-integrated", 
+2. "Moderately integrated", and 
+3. "Disintegrated" 
+
+Now we can [extract the class information (category)](http://anikomaraz.com/wp-content/uploads/2017/03/IPO5_prepFinalDB.html), and attach it to the initial data to calculate class differences in the measured variables. 
+<br>
+<br>
+But first I [created the SCL-90, STAXI and DES scales](http://anikomaraz.com/wp-content/uploads/2017/03/IPO6_prepCheckOtherScales.html). Then checked their [reliability](http://anikomaraz.com/wp-content/uploads/2017/03/IPO6b_corrplots.pdf). Scales and subscales all had acceptable reliability (although STAXI contained negatively correlating items). 
+
+<br>
+
+### 3. Class differences
+Although classes did not differ in terms of demographics, there were many differences between classes. 
+The three groups (Disintegrated N=23, Moderately integrated N=91, Well-integrated N=67) did not differ on gender and education. However, the disintegrated group was about 6 years younger than the Moderately and 7 years younger than the Well-integrated group. (see this for [descriptive](http://anikomaraz.com/wp-content/uploads/2017/03/IPO9_calc1.html) analysis, and this for [statistics](http://anikomaraz.com/wp-content/uploads/2017/03/IPO10_calc2.html) on demographic and psychological variables.) 
+<br>
+<br>
+In terms of [psychiatric or pathological symptoms](http://anikomaraz.com/wp-content/uploads/2017/03/IPO7_plot_scl_des_stax.html), the Disintegrated group appears to suffer from more psychiatric symptoms than the other two groups, have more anger (especially on the level of temperament, reaction and repression), and they also report more dissociative experiences. These are in line with previous theories on personality organisation and the symptoms (distress, anger and dissociation) they may be associated with. 
+<br>
+<br>
+Results are more complex in terms of [other (Axis 1 and 2) diagnoses](http://anikomaraz.com/wp-content/uploads/2017/03/IPO8_Axis1Axis2.html). Interestingly, the classes are similar in the (more transient) number of Axis 1 symptoms present. However, there are differences on personality disorders: the Disintegrated class can be diagnosed with more personality disorders than the other classes. Results are especially prominent on Borderline and Depressive personality disorders, where the Disintegrated class scores the highest (see the figures below). 
+
+<br>
+<br>
+
+#### Axix 1. symptoms:
+
+![](http://anikomaraz.com/wp-content/uploads/2017/03/Axis1_categories.png)
+
+<br>
+
+#### Axis 2. symptoms:
+
+![](http://anikomaraz.com/wp-content/uploads/2017/03/Axis2_onebyone.png)
+
+<br>
+<br>
+
+<center> <h2> Conclusions </h2> </center>
+
+<br>
+<br>
+
+Although the Inventory of Personality Organisation (IPO) stands on strong theoretical basis rooted in classical psychoanalysis, IPO has only been validated via testing its factor structure and the association with other variables (i.e. Big Five personality traits, mood states or attachment style). This was the first study to identify severity groups based on IPO to comply with the initial idea of differentiating "levels" of personality organisation (classes) instead of "traits" (factors).  
+
+<br>
+
+It appears that IPO is able to differentiate people on the level of personality integrity without being influenced by the more transient Axis 1 symptoms. This is especially prominent in borderline personality disorder, given that 90% of those in the "Disintegrated" group have borderline personality disorder. 
+
+<br>
+
+Perhaps one day the level of personality organisation (measured via IPO) can take over the official nomenclature of categorising personality disorders which has long been deemed [outdated](https://www.researchgate.net/profile/Douglas_Samuel2/publication/7419356_Diagnostic_categories_or_dimension_A_question_for_the_Diagnostic_and_Statistical_Manual_of_Mental_Disorders-Fifth_Edition/links/546a549d0cf20dedafd386a4.pdf). 
+
+<br>
+<br>
+
