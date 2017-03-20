@@ -10,6 +10,7 @@ I'll post the initial data file as soon as the article is published. Until then 
 You can either browse through the files in the folder (see list below) or go directly to my website and click your way through the file: 
 http://anikomaraz.com/2017/02/18/ipo/
 password: penfriend
+Here you'll find not only the code but also visualisations (i.e. plots). 
 
 Content of the repository: 
 1. IPO_body.Rmd contains the background of the project and the main body of the analysis. It is designed to explain the main idea of analysis. Details (and codes) are hidden in the complementary files.  
