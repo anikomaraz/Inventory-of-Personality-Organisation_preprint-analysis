@@ -9,7 +9,6 @@ I'll post the initial data file as soon as the article is published. Until then 
 
 You can either browse through the files in the folder (see list below) or go directly to my website and click your way through the file: 
 http://anikomaraz.com/2017/02/18/ipo/
-password: penfriend
 Here you'll find not only the code but also visualisations (i.e. plots). 
 
 Content of the repository: 
